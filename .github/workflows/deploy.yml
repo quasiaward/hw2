@@ -1,0 +1,37 @@
+name: Deploy to Ubuntu
+
+# This workflow is triggered ONLY when the Build and Push workflow finishes successfully
+on:
+  workflow_run:
+    workflows: ["Build and Push Docker Image"]
+    types: [completed]
+
+jobs:
+  deploy:
+    # Uses your local machine where the self-hosted runner is installed
+    runs-on: self-hosted
+    
+    # Ensure it only runs if the build was completely successful
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      # Step 1: Pull the latest Docker Hub image down to your Ubuntu machine
+      - name: Pull latest image from Docker Hub
+        run: docker pull ${{ secrets.DOCKERHUB_USERNAME }}/chat-insight-api:latest
+
+      # Step 2: Stop and remove the old container if it exists
+      # (The || true makes sure the script doesn't fail if there's no container running yet)
+      - name: Remove old container
+        run: |
+          docker stop chat-insight-container || true
+          docker rm chat-insight-container || true
+
+      # Step 3: Run the new container
+      # --restart unless-stopped guarantees it stays alive even if Ubuntu reboots
+      - name: Run new container
+        run: |
+          docker run -d \
+            --name chat-insight-container \
+            -p 8000:8000 \
+            --restart unless-stopped \
+            ${{ secrets.DOCKERHUB_USERNAME }}/chat-insight-api:latest
