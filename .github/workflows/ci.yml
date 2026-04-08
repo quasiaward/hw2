@@ -6,7 +6,8 @@ on:
       - main
 
 jobs:
-  build-and-push:
+  docker-build-push:
+    name: Build and Push Docker image
     runs-on: self-hosted
 
     steps:
@@ -26,9 +27,10 @@ jobs:
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/chat-analyzer:latest
 
-  deploy:
+  deploy-to-local-mac-server:
+    name: Deploy to Local Mac Server
     runs-on: self-hosted
-    needs: build-and-push
+    needs: docker-build-push
 
     steps:
     - name: Pull latest image
