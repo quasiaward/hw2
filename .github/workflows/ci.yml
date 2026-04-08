@@ -25,3 +25,20 @@ jobs:
         context: .
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/chat-analyzer:latest
+
+  deploy:
+    runs-on: self-hosted
+    needs: build-and-push
+
+    steps:
+    - name: Pull latest image
+      run: /usr/local/bin/docker pull ${{ secrets.DOCKERHUB_USERNAME }}/chat-analyzer:latest || true
+
+    - name: Stop existing container
+      run: /usr/local/bin/docker stop chat-analyzer-container || true
+
+    - name: Remove old container
+      run: /usr/local/bin/docker rm chat-analyzer-container || true
+
+    - name: Run new container
+      run: /usr/local/bin/docker run -d -p 8000:8000 --name chat-analyzer-container ${{ secrets.DOCKERHUB_USERNAME }}/chat-analyzer:latest
